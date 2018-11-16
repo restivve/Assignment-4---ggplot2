@@ -1,0 +1,612 @@
+---
+title: "Data visualization with ggplot2 (part 1)"
+author: "Victoria Restivo"
+date: '2018-11-16'
+output: html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+-NOTE: there are comments in the code as well :) 
+
+
+#Chapter 1: Introduction to Data Visualization in ggplot2
+
+Data visualization is a form of data analysis, making plots attractive and meaningful
+
+Explorative: easily generated, data heavy, not pretty
+Explainatory: intensive, but inteded for a broader audience
+
+Plot/visualize data to show distinct trends
+
+##Load the ggplot package
+```{r}
+library(ggplot2)
+```
+
+If a variable is a category, use factor() - this will help insure values on the axis are only values present in the dataset
+
+NOTE - mtcars is the data set used in data camp
+```{r}
+ggplot(mtcars, aes(x = factor(cyl), y = mpg)) +
+  geom_point()
+```
+
+##Grammar of Graphics
+Data - dataset being plotted
+Aesthetics - scales onto which we map our data
+Geometries - visual elements of the data
+
+##make a scatter plot using the data set mtcars, x= the variable weight, y = the variable miles per gallon
+```{r}
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+geom_point()
+```
+
+##Make the color equal to another variable, the displacement (disp) of the car engine
+```{r}
+ggplot(mtcars, aes(x = wt, y = mpg, color = disp)) +
+geom_point()
+```
+##Make the size of the points equal to disp
+```{r}
+ggplot(mtcars, aes(x = wt, y = mpg, size = disp)) +
+    geom_point()
+```
+
+##NOTE - Shape can be used in aes() but doesn't work for continuous variables, only categorical
+
+##Add geom_point() and geom_smooth(), geom_smooth() will draw a smooth line over the points that follows the data
+
+```{r}
+ggplot(diamonds, aes(x = carat, y = price)) + geom_point() + geom_smooth()
+```
+
+
+##Assign color = to the variable clarity, must go within the aes()
+```{r}
+ggplot(diamonds, aes(x = carat, y = price, color=clarity)) +
+  geom_smooth()
+```
+
+
+##Plot using geom_points with the argument alpha (alpha makes the points transparent, in this case 40% visible/60% transparent).
+##NOTE: color=variable can also be used in the geom_point() function.
+##NOTE: you can store a plot as a variable
+```{r}
+ggplot(diamonds, aes(x = carat, y = price, color=clarity)) +
+  geom_point(alpha=0.4)
+```
+
+##store plot as variable
+```{r}
+dia_plot <- ggplot(diamonds, aes(x = carat, y = price))
+```
+
+##add geom_point() to the variable above, use aes inside geom_point()
+```{r}
+dia_plot + geom_point(aes(color = clarity))
+```
+
+##use se=FALSE to avoid error shading in geom_smooth()
+```{r}
+dia_plot + geom_smooth(aes(color=clarity), se = FALSE)
+```
+
+#Chapter 2: Objects and Layers
+
+##calculate a linear model using lm()
+```{r}
+carModel <- lm(mpg ~ wt, data = mtcars)
+```
+
+##in base R plot the linear model using abline(), lty() is the line type
+```{r}
+abline(carModel, lty = 2)
+```
+
+##Note: in general ggplot2 is easier to make plots with a legend than base R
+
+```{r}
+# Plot 1: add geom_point() to create a scatter plot
+ggplot(mtcars, aes(x = wt, y = mpg, col = cyl)) +
+  geom_point()
+
+# Plot 2: include the lines of the linear models, per cyl
+ggplot(mtcars, aes(x = wt, y = mpg, col = cyl)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+
+# Plot 3: include a lm for the entire dataset in its whole (this will add another trendline for the entire data set rather than the 3 different cyl (categorical variable))
+ggplot(mtcars, aes(x = wt, y = mpg, col = cyl)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_smooth(aes(group = 1), method = "lm", se = FALSE, linetype = 2) 
+```
+
+##You can tell if you are doing something wrong in ggplot if no legend is produced
+
+```{r}
+##When layering multiple variables onto one graph, this is preferred (iris.wide is a variable created to include petal length and width, as well as sepal length and width, part=petal or sepal), this will create a proper legend:
+ggplot(iris.wide, aes(x = Length, y = Width, col = Part)) +
+geom_point()
+```
+
+##Tidy Data, easier to plot all different types of species on the same plot so they have the same Y-value, species name can go across the top (i.e. the facet_grid() or facet layer) rather than separate graphs all with different Y-values (which may be hard to compare)
+
+```{r}
+str(iris.tidy) 
+#gives structure which has all the parts used below (x, y, col, and facet)
+
+ggplot(iris.tidy, aes(x = Species, y = Value, col = Part)) +
+    geom_jitter() +
+    facet_grid(. ~ Measure) 
+#makes a nice plot with a legend, and the title/facet layer is shown allowing for only one y axis and direct comparisons can be made
+```
+##use functions from tidyr package to convert iris to iris.tidy
+##NOTE: data is considered tidy when every row is an observation and every column is a variable
+
+##gather() moves information from columns to rows (also rearrange what is a categorical value using a "-")
+##separate() splits one column into two or more
+##%>% (pipe) passes the result of the left hand side as the first argument to the function on the right hand side
+```{r}
+# Load the tidyr package
+library(tidyr)
+
+# Fill in the ___ to produce to the correct iris.tidy dataset
+iris.tidy <- iris %>%
+  gather(key, Value, -Species) %>%
+  separate(key, c("Part", "Measure"), "\\.")
+```
+
+#Chapter 3: Visible Aesthetics
+
+##call aesthetics in the aes() layer
+-x = x axis position
+-y = y axis position
+-colour = colour of dots/other shapes (also changes outline of an object)
+-fill = fill colour (changes filling of an object)
+
+
+##call attributes in the geom() layer
+-size = diameter of points/thickness of lines
+-alpha = transparency
+-linetype = line dash pattern
+-labels = text on a plot or axes
+-shape = shape of a point
+-size = size of a point
+
+```{r}
+# 1 - Map mpg to x and cyl to y
+ggplot(mtcars, aes(x=mpg, y=cyl)) +
+  geom_point()
+  
+# 2 - Reverse: Map cyl to x and mpg to y
+ggplot(mtcars, aes(x=cyl, y=mpg)) +
+  geom_point()
+
+# 3 - Map wt to x, mpg to y and cyl to col, making the points different colours based on the cyl variable (categorical)
+ggplot(mtcars, aes(x=wt, y=mpg, col=cyl)) +
+  geom_point()
+
+# 4 - Change shape and size of the points in the above plot, changes the size and shape of the points, also made them a clear in the centre of the point
+ggplot(mtcars, aes(x=wt, y=mpg, col=cyl)) +
+  geom_point(shape=1, size=4)
+```
+
+##the default geom_point() uses shape = 19 (a solid circle with an outline the same colour as the inside)
+##shape=1 makes the point hollow/no filling (this is what happened in #4 above)
+##shape=16 is solid no outline
+
+##shape=21 allows you to use both fill for the inside and col for the outline  **COOL APPLICATION!
+
+```{r}
+# From the previous exercise, makes scatter plot with coloured outlines, hollow points
+ggplot(mtcars, aes(x = wt, y = mpg, col = cyl)) +
+  geom_point(shape = 1, size = 4)
+
+
+# 1 - Map cyl to fill, makes a scatter plot with hollow non-coloured points (i.e. black outline)
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl)) +
+  geom_point(shape = 1, size = 4)
+
+
+# 2 - Change shape and alpha of the points in the above plot, makes scatter plot with colour filled points, 60% visible/40% transparent
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl)) +
+  geom_point(shape = 21, size = 4, alpha = 0.6)
+
+
+# 3 - Map am to col in the above plot, added outlines to the points with a legend (am is a factor variable in the dataset)
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl, col=am)) +
+  geom_point(shape = 21, size = 4, alpha = 0.6)
+```
+
+```{r}
+# Map cyl to size, makes plot with points that change based on size of cyl variable (legend is included)
+ggplot (mtcars, aes(x=wt, y=mpg, size=cyl)) + geom_point()
+
+# Map cyl to alpha, points were distinguised with transparency (legend included)
+ggplot (mtcars, aes(x=wt, y=mpg, alpha=cyl)) + geom_point()
+
+# Map cyl to shape, different shapes used for cyl variable (legend included)
+ggplot (mtcars, aes(x=wt, y=mpg, shape=cyl)) + geom_point() 
+
+# Map cyl to label, different labels for the cyl (either 4, 6, or 8, are layed over the data, no legend)
+ggplot (mtcars, aes(x=wt, y=mpg, label=cyl)) + geom_point() + geom_text()
+```
+
+##Attributes
+-Aesthetics can be used as attributes
+-Shapes in R can have a value from 1-25, only shapes 1-20 can accept only a color asthetic, but shapes 21-25 have both a color and a fill asthetic
+
+##Hexadecimal
+-Hexadecimal ("related to 16") is a base-16 alphanumeric counting system, hexadecimal colours use a system (00-FF) to specify a six-digit code for red, green and blue values ("#RRGGBB") of a colour, for example: put blue is "0000FF", black "000000", white "FFFFFF")
+
+
+```{r}
+# Define a hexadecimal color
+my_color <- "#4ABEFF"
+
+# Draw a scatter plot with color *aesthetic*, makes the typical plot we've been looking at with colours defined by col=cyl, the factor cyl has a legend 
+ggplot(mtcars, aes(x=wt, y=mpg, col=cyl)) + geom_point()
+
+
+# Same, but set color *attribute* in geom layer, the points colour is all not baby blue (the line color=my_color, which was defined in the first line, overwrites col=cyl)
+ggplot(mtcars, aes(x=wt, y=mpg, col=cyl)) + geom_point (color=my_color)
+
+
+
+
+# Set the fill aesthetic; color, size and shape attributes, in this one the fill is the 3 different colours we are used to, but the outside of the points are coloured the baby blue "my_colour", the points are large diamonds
+ggplot(mtcars, aes(x=wt, y=mpg, fill=cyl)) + geom_point (color=my_color, size=10, shape=23)
+```
+
+##NOTE: shape23 = diamonds
+
+```{r}
+# Expand to draw points with alpha 0.5 (50% transparent, based on the variable cyl)
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl)) + geom_point(alpha=0.5)
+
+  
+# Expand to draw points with shape 24 and color yellow (makes the shape a triangle, and the outline colour yellow, while the cyl variable determines the inside colour with a legend)
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl)) +geom_point (shape=24, colour="yellow")
+
+  
+# Expand to draw text with label rownames(mtcars) and color red, writes over the points with the names of the cars in the colour red
+ggplot(mtcars, aes(x = wt, y = mpg, fill = cyl)) +geom_point () + geom_text(label=rownames(mtcars), color="red")
+```
+
+##NOTE: shape=24 is a triangle
+
+##WARNING: Adding more aesthetic mapping to a plot increases its complexity and decreases readibility 
+
+##In general, variables are mapped to aesthetics, visual elements are set by attributes in the geom layer
+
+```{r}
+# Map mpg onto x, qsec onto y and factor(cyl) onto col
+ggplot(mtcars, aes(x=mpg, y=qsec, color=factor(cyl))) + geom_point()
+
+
+# Add mapping: factor(am) onto shape
+ggplot (mtcars, aes(x=mpg, y=qsec, color=factor(cyl), shape=factor(am))) + geom_point()
+
+
+# Add mapping: (hp/wt) onto size
+ggplot(mtcars, aes(x=mpg, y=qsec, color=factor(cyl), shape=factor(am), size=(hp/wt))) + geom_point()
+```
+
+##NOTE: label and shape are only applicable to categorical data, the other ones can be used for categorical or numerical data
+
+##Poistions - identity 
+-when identity = default value in the data frame is exactly where we want it to be
+-position jitter = can be defined in a function (position_jitter()), or in our ggplot (position = posn.j)
+
+##Scale Functions
+-scale_x_continuous OR _discrete (discrete=categorical)
+-expand can be used to give a gap between data and axis
+
+```{r}
+cyl.am <- ggplot(mtcars, aes(x = factor(cyl), fill = factor(am))) 
+
+# Add geom (position will = "stack" by default, creates a stacked bar-graph of the factors of the variable am with a legend)
+cyl.am + geom_bar()
+
+# Fill - show proportion
+cyl.am + 
+  geom_bar(position = "fill")  
+
+# Dodging - principles of similarity and proximity (place the bar graphs for the factor(am) variable side by side)
+cyl.am +
+  geom_bar(position = "dodge") 
+
+# Clean up the axes with scale_ functions (legend is more descriptive)
+val = c("#E41A1C", "#377EB8") #colours for the bar graphs
+lab = c("Manual", "Automatic") #labels for the two different bar graphs 
+cyl.am +
+  geom_bar(position = "dodge") + #side by side bars
+  scale_x_discrete("Cylinders") +  #labels x axis
+  scale_y_continuous("Number") + #labels y axis
+  scale_fill_manual("Transmission",  #first argument labels the legend
+                    values = val, #values are the colours defined above 
+                    labels = lab) #labels are the labels above
+```
+
+##Setting a dummy aesthetic
+
+```{r}
+# 1 - Create jittered plot of mtcars, mpg onto x, 0 onto y (makes univariate plot)
+ggplot(mtcars, aes(x = mpg, y = 0)) +
+  geom_jitter()
+
+# 2 - Add function to change y axis limits, looks nicer because you changed the y axis limits
+ggplot(mtcars, aes(x = mpg, y = 0)) +
+  geom_jitter() + scale_y_continuous (limits = c(-2,2))
+```
+
+##Important to consider who the reader is and gear plots to them
+##Helpful to use alpha blending/transparency to avoid overplotting
+
+```{r}
+#Basic scatter plot: wt on x-axis and mpg on y-axis; map cyl to col
+ggplot (mtcars, aes(x=wt, y=mpg, col=cyl)) + geom_point(size=4)
+
+
+#Hollow circles
+ggplot (mtcars, aes(x=wt, y=mpg, col=cyl)) + geom_point(size=4, shape=1)
+
+#Transparency 
+ggplot (mtcars, aes(x=wt, y=mpg, col=cyl)) + geom_point(size=4, alpha=0.6)
+``` 
+
+```{r}
+# Scatter plot: carat (x), price (y), clarity (color)
+ggplot (diamonds, aes(x=carat, y=price, col=clarity)) + geom_point()
+
+
+# Adjust for overplotting
+ggplot (diamonds, aes(x=carat, y=price, col=clarity)) + geom_point(alpha = 0.5)
+
+
+# Scatter plot: clarity (x), carat (y), price (color), lines all values along one line in x axis
+ggplot (diamonds, aes(x=clarity, y=carat, col=price)) + geom_point(alpha = 0.5)
+
+# Dot plot with jittering, this jitters the values making it easier to read (apparently?)
+ggplot (diamonds, aes(x=clarity, y=carat, col=price)) + geom_point(alpha = 0.5, position = "jitter")
+```
+##jitter is in ""
+
+
+#Chapter 4: Scatter Plots
+-3 common plot types (scatter, bar, line plots)
+
+##Scatter plot
+-each geom has specific aesthetic mappings, i.e. geom_point() requires x, y arguments, but there are also optional ones
+
+```{r}
+#Use geom_jitter() as a geom:
+ggplot(mtcars, aes(x = cyl, y = wt)) +
+  geom_jitter()
+
+#Using geom_jitter() and controlling the width:
+ggplot(mtcars, aes(x = cyl, y = wt)) +
+  geom_jitter(width=0.1)
+
+#Jitter can be an argument in geom_point as a position function
+ggplot(mtcars, aes(x = cyl, y = wt)) +
+  geom_point(position = position_jitter(0.1))
+```
+
+##Histograms - common way of showing distributions
+
+-When using geom_histogram, stat="bin" is the default (histograms cut continuous variables into discrete bins, you always get 30 evenly sized bins specified with binwidth=range/30)
+
+-geom_histogram only requires one aesthetic (x), the y axis comes from ..count.. (it automatically counts how many variables are in each bin - this is stored in an internal data frame
+
+-density is also calculated (proportional frequency, use ..density.. to access)
+
+```{r}
+#Univariate (i.e. 1 variable) histogram (y=count)
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram()
+
+#plot above, plus set binwidth to 1 in the geom layer (y=count)
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram(binwidth=1)
+
+
+#y=density
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram(binwidth=1, aes(y=..density..))
+
+
+#plot above, fill attribute to "#377EB8" (blue)
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram(binwidth=1, aes(y=..density..), fill="#377EB8")
+```
+
+##histograms & bar graphs also have position arguments 
+-stack = bars on top of each other, counts used, default
+-fill = bars on top, but using proportions
+-dodge = bars next to each other, counts used
+##NOTE: the positions must be in ""
+
+```{r}
+#position = dodge
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = "dodge")
+```
+
+
+# Definition of a set of blue colors
+blues <- brewer.pal(9, "Blues") # from the RColorBrewer package
+
+# 1 - Make a color range using colorRampPalette() and the set of blues
+blue_range <- colorRampPalette(blues)
+
+# 2 - Use blue_range to adjust the color of the bars, use scale_fill_manual()
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = blue_range(11))
+##you can adjust the dodge position so that the bars overlap using position_dodge(width=___)
+
+```{r}
+#Define posn_d with position_dodge()
+posn_d <- position_dodge(width=0.2)
+
+#Use the position argument to posn_d (bars overlap)
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = posn_d)
+
+
+#Use posn_d as position and adjust alpha to 0.6 (cool overlap and transparency)
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = posn_d, alpha=0.6)
+```
+
+
+##You can also overlap a histogram, but you need to turn it into a frequency polygram
+
+```{r}
+# A basic histogram, add coloring defined by cyl
+ggplot(mtcars, aes(mpg, fill=cyl)) +
+  geom_histogram(binwidth = 1)
+
+# Change position to identity, this is messed up though
+ggplot(mtcars, aes(mpg, fill=cyl)) +
+  geom_histogram(binwidth = 1, position="identity")
+
+
+# Change geom to freqpoly (position is identity by default), this shows the histogram/new frequency polgram into something neat
+ggplot(mtcars, aes(mpg, color=cyl)) +
+  geom_freqpoly(binwidth = 1, position="identity")
+```
+
+```{r}
+##in bar graphs you can set the colour using "scale_fill_brewer"
+
+# Definition of a set of blue colors
+blues <- brewer.pal(9, "Blues") # from the RColorBrewer package
+
+# 1 - Make a color range using colorRampPalette() and the set of blues
+blue_range <- colorRampPalette(blues)
+
+# 2 - Use blue_range to adjust the color of the bars, use scale_fill_manual()
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = blue_range(11))
+  
+```
+
+##geom_line() plots
+-Used for line series
+-Follow same syntax as geom_point/geom_bar/geom_histogram
+-Series can be encoded with size, line type, or colour
+
+##used in geom_line, geom_area() default is stack, basically fills in the lines under neath, if you use "fill" it does proportion (you would need to change the y axis since its no longer counts!!)
+
+##geom_ribbon helps to show uncertainty, and allows us to show overlapping series (data for variables)
+
+##geom_rect needs 4 aes's: xmin, xmax, ymin, ymax
+
+```{r}
+# Basic line plot
+ggplot(economics, aes(x = date, y = unemploy/pop)) +
+  geom_line()
+
+# Expand the following command with geom_rect() to draw the recess periods
+ggplot(economics, aes(x = date, y = unemploy/pop)) +
+  geom_rect(data = recess, 
+         aes(xmin = begin, xmax = end, ymin=-Inf, ymax=+Inf),
+         inherit.aes = FALSE, fill = "red", alpha = 0.2) +
+  geom_line()
+```
+
+#Chapter 5: qplot
+-quick and easy way to generate plots
+-seems like less variables to specify in code
+-qplot picks the geom for us
+-you can still use jitter to correct for overplotting
+-alpha plotting doesn't quite work because it adds to the legend, you can get around this by doing: alpha=I(0.5)
+
+```{r}
+# Using ggplot:
+ggplot(mtcars, aes(x=wt, y=mpg)) +
+  geom_point()
+
+# Using qplot:
+qplot(x=wt, y=mpg, data = mtcars)
+
+##both of the above plots give the same output
+```
+
+```{r}
+# basic qplot scatter plot:
+qplot(wt, mpg, data = mtcars)
+
+# Categorical variable mapped onto size:
+# cyl
+qplot(wt, mpg, data = mtcars, size = factor(cyl))
+
+# gear
+qplot(wt, mpg, data = mtcars, size = gear)
+
+# Continuous variable mapped onto col:
+# hp
+qplot(wt, mpg, data = mtcars, color = hp)
+
+# qsec
+qplot(wt, mpg, data = mtcars, color = qsec)
+```
+
+```{r}
+# qplot() with x only
+qplot(factor(cyl), data = mtcars)
+
+# qplot() with x and y
+qplot(factor(cyl), factor(vs), data = mtcars)
+
+# qplot() with geom set to jitter manually
+qplot(factor(cyl), factor(vs), data = mtcars, geom = "jitter")
+```
+
+
+```{r}
+
+# "Basic" dot plot, with geom_point():
+ggplot(mtcars, aes(cyl, wt, col = am)) +
+  geom_point(position = position_jitter(0.2, 0))
+
+# 1 - "True" dot plot, with geom_dotplot():
+ggplot(mtcars, aes(cyl, wt, fill = am)) +
+  geom_dotplot(binaxis = "y", stackdir = "center")
+
+# 2 - qplot with geom "dotplot", binaxis = "y" and stackdir = "center", this is the same as the ggplot above
+qplot(
+  cyl, wt,
+  data = mtcars,
+  fill = am,
+  geom = "dotplot",
+  binaxis = "y",
+  stackdir = "center"
+```
+  
+  
+```{r}
+#ggplot
+ggplot(titanic, aes(x = Pclass, fill = Sex)) +
+  geom_bar(position = "dodge")
+
+#add facet_grid() layer (makes the two different graphs side by side with one y axis, and titles to differentiate the graphs)
+ggplot(titanic, aes(x = Pclass, fill = Sex)) +
+  geom_bar(position = "dodge") + facet_grid(. ~ Survived)
+
+#Define an object for position jitterdodge, to use below
+posn.jd <- position_jitterdodge(0.5, 0, 0.6)
+
+# Use the position object above (overlays points (in above posn.jd definition), transparency 50%))
+ggplot(titanic, aes(x = Pclass, y=Age, color = Sex)) +
+  geom_point(size=3, alpha=0.5, position = posn.jd) + facet_grid(. ~ Survived) 
+```
+
+
